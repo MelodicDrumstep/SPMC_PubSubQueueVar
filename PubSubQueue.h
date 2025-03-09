@@ -23,6 +23,8 @@ SOFTWARE.
 */
 #pragma once
 
+#include <array>
+
 // PubSubQueue is a single publisher(source) multiple subscriber(receiver) message queue.
 // Publisher is not affected(e.g. blocked) by or even aware of subscribers.
 // Subscriber is a pure reader, if it's not reading fast enough and falls far behind the publisher it'll lose message.
@@ -49,7 +51,7 @@ public:
         size += sizeof(MsgHeader);
         uint32_t blk_sz = toBlk(size);
         uint32_t padding_sz = BLK_CNT - (written_idx % BLK_CNT);
-        bool rewind = blk_sz > padding_sz;
+        bool rewind = blk_sz > padding_sz; // rewind means rewinding to the head of the queue
         uint32_t advance_sz = blk_sz + (rewind ? padding_sz : 0);
         if(advance_sz > BLK_CNT) { // msg size too large
             return nullptr;
@@ -138,7 +140,7 @@ private:
     static constexpr uint32_t BLK_CNT = Bytes / sizeof(Block);
     static_assert(BLK_CNT && !(BLK_CNT & (BLK_CNT - 1)), "BLK_CNT must be a power of 2");
 
-    Block blk[BLK_CNT];
+    std::array<Block, BLK_CNT> blk;
 
     alignas(64) uint64_t written_idx = 0;
     uint64_t last_key_idx = 0;
